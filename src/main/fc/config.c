@@ -110,10 +110,22 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
+#ifdef BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_FEATURES FEATURE_VBAT
+#else
+#define DEFAULT_VOLTAGE_METER_FEATURES 0
+#endif
+#ifdef BOARD_HAS_CURRENT_SENSOR
+#define DEFAULT_CURRENT_METER_FEATURES FEATURE_CURRENT_METER
+#else
+#define DEFAULT_CURRENT_METER_FEATURES 0
+#endif
+
+
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
-    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE  | FEATURE_FAILSAFE
+    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | DEFAULT_VOLTAGE_METER_FEATURES | DEFAULT_CURRENT_METER_FEATURES
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
@@ -873,7 +885,7 @@ void validateAndFixConfig(void)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
-        if (batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
+        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
             featureClear(FEATURE_CURRENT_METER);
         }
 #endif
@@ -889,7 +901,7 @@ void validateAndFixConfig(void)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
-        if (batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
+        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
             featureClear(FEATURE_CURRENT_METER);
         }
 #endif

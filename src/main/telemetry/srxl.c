@@ -202,7 +202,7 @@ void srxlFramePowerBox(sbuf_t *dst)
     srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
     srxlSerialize16(dst, getVbat() * 10); // vbat is in units of 0.1V - vbat1
     srxlSerialize16(dst, getVbat() * 10); // vbat is in units of 0.1V - vbat2
-    srxlSerialize16(dst, amperage / 10);
+    srxlSerialize16(dst, getAmperage() / 10);
     srxlSerialize16(dst, 0xFFFF);
 
     srxlSerialize16(dst, 0xFFFF); // spare

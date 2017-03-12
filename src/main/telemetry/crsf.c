@@ -171,7 +171,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
     const uint8_t batteryRemainingPercentage = batteryCapacityRemainingPercentage();
 #else
-    crsfSerialize16(dst, amperage / 10);
+    crsfSerialize16(dst, getAmperage() / 10);
     const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentage();
 #endif

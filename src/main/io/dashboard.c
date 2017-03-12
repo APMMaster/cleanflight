@@ -463,8 +463,10 @@ void showBatteryPage(void)
         drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, batteryPercentage);
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
-        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, mAhDrawn);
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+
+        int32_t amperage = getAmperage();
+        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, getMAhDrawn());
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);

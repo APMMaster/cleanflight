@@ -428,7 +428,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return feature(FEATURE_VBAT);
 
         case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
+            return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
@@ -841,7 +841,7 @@ void startBlackbox(void)
     blackboxHistory[1] = &blackboxHistoryRing[1];
     blackboxHistory[2] = &blackboxHistoryRing[2];
 
-    vbatReference = vbatLatest;
+    vbatReference = getVbatLatest();
 
     //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -1037,8 +1037,8 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->motor[i] = motor[i];
     }
 
-    blackboxCurrent->vbatLatest = vbatLatest;
-    blackboxCurrent->amperageLatest = amperageLatest;
+    blackboxCurrent->vbatLatest = getVbatLatest();
+    blackboxCurrent->amperageLatest = getAmperageLatest();
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1214,7 +1214,7 @@ static bool blackboxWriteSysinfo()
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale:%u", batteryConfig()->vbatscale);
+                blackboxPrintfHeaderLine("vbatscale:%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
@@ -1226,9 +1226,10 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("vbatref:%u",                          vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
-            //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
             if (feature(FEATURE_CURRENT_METER)) {
-                blackboxPrintfHeaderLine("currentMeter:%d,%d", batteryConfig()->currentMeterOffset, batteryConfig()->currentMeterScale);
+                for (int i = 0; i < MAX_ADC_OR_VIRTUAL_CURRENT_METERS; i++) {
+                    blackboxPrintfHeaderLine("currentSensor_%d:%d,%d", i, currentMeterADCOrVirtualConfig(i)->offset, currentMeterADCOrVirtualConfig(i)->scale);
+                }
             }
             );
 

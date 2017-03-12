@@ -26,6 +26,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
@@ -114,6 +115,7 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
+/*
 static void taskUpdateBattery(timeUs_t currentTimeUs)
 {
 #if defined(USE_ADC) || defined(USE_ESC_SENSOR)
@@ -126,7 +128,7 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
         static uint32_t ibatLastServiced = 0;
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
@@ -136,6 +138,35 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
         }
     }
 }
+*/
+
+
+void taskUpdateBattery(timeUs_t currentTimeUs)
+{
+#if defined(USE_ADC) || defined(USE_ESC_SENSOR)
+    static uint32_t vbatLastServiced = 0;
+
+    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
+        if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
+            vbatLastServiced = currentTimeUs;
+
+            voltageMeterADCUpdate();
+            batteryUpdate();
+        }
+    }
+#endif
+
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+        static uint32_t ibatLastServiced = 0;
+        const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
+
+        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
+            ibatLastServiced = currentTimeUs;
+            batteryUpdateCurrentMeter(ibatTimeSinceLastServiced);
+        }
+    }
+}
+
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
@@ -237,7 +268,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || batteryConfig()->currentMeterSource != CURRENT_METER_NONE);
     setTaskEnabled(TASK_RX, true);
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());

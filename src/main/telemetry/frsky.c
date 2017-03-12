@@ -429,7 +429,7 @@ static void sendVoltageAmp(void)
 static void sendAmperage(void)
 {
     sendDataHead(ID_CURRENT);
-    serialize16((uint16_t)(amperage / 10));
+    serialize16((uint16_t)(getAmperage() / 10));
 }
 
 static void sendFuelLevel(void)
@@ -439,7 +439,7 @@ static void sendFuelLevel(void)
     if (batteryConfig()->batteryCapacity > 0) {
         serialize16((uint16_t)calculateBatteryPercentage());
     } else {
-        serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
+        serialize16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF));
     }
 }
 

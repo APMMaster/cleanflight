@@ -198,6 +198,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_CURRENT_DRAW:
         {
+            int32_t amperage = getAmperage();
             buff[0] = SYM_AMP;
             sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
             break;
@@ -206,7 +207,7 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_MAH_DRAWN:
         {
             buff[0] = SYM_MAH;
-            sprintf(buff + 1, "%d", mAhDrawn);
+            sprintf(buff + 1, "%d", getMAhDrawn());
             break;
         }
 
@@ -401,7 +402,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_POWER:
         {
-            sprintf(buff, "%dW", amperage * getVbat() / 1000);
+            sprintf(buff, "%dW", getAmperage() * getVbat() / 1000);
             break;
         }
 
@@ -590,7 +591,7 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_FLYTIME);
 
-    if (mAhDrawn >= osdConfig()->cap_alarm)
+    if (getMAhDrawn() >= osdConfig()->cap_alarm)
         SET_BLINK(OSD_MAH_DRAWN);
     else
         CLR_BLINK(OSD_MAH_DRAWN);
@@ -634,7 +635,7 @@ static void osdUpdateStats(void)
     if (stats.min_voltage > getVbat())
         stats.min_voltage = getVbat();
 
-    value = amperage / 100;
+    value = getAmperage() / 100;
     if (stats.max_current < value)
         stats.max_current = value;
 
@@ -709,14 +710,14 @@ static void osdShowStats(void)
     strcat(buff, "%");
     displayWrite(osdDisplayPort, 22, top++, buff);
 
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
         displayWrite(osdDisplayPort, 2, top, "MAX CURRENT      :");
         itoa(stats.max_current, buff, 10);
         strcat(buff, "A");
         displayWrite(osdDisplayPort, 22, top++, buff);
 
         displayWrite(osdDisplayPort, 2, top, "USED MAH         :");
-        itoa(mAhDrawn, buff, 10);
+        itoa(getMAhDrawn(), buff, 10);
         strcat(buff, "\x07");
         displayWrite(osdDisplayPort, 22, top++, buff);
     }
