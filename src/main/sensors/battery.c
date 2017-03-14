@@ -152,31 +152,34 @@ void batteryUpdatePresence(void)
 {
     static uint16_t previousVoltage = 0;
 
-    /* battery has just been connected*/
     if (
         voltageState == BATTERY_NOT_PRESENT
         && voltageMeter.filtered > batteryConfig()->batteryNotPresentLevel
         && previousVoltage > 0 &&
         ABS(voltageMeter.filtered - previousVoltage) <= VBAT_STABLE_MAX_DELTA
     ) {
-        /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
-        voltageState = BATTERY_OK;
+        /* battery has just been connected - calculate cells, warning voltages and reset state */
+
 
         unsigned cells = (voltageMeter.filtered / batteryConfig()->vbatmaxcellvoltage) + 1;
         if (cells > 8) {
             // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
             cells = 8;
         }
+
+        consumptionState = voltageState = BATTERY_OK;
         batteryCellCount = cells;
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig()->batterynotpresentlevel */
     } else if (
         voltageState != BATTERY_NOT_PRESENT
         && voltageMeter.filtered <= batteryConfig()->batteryNotPresentLevel
         && ABS(voltageMeter.filtered - previousVoltage) <= VBAT_STABLE_MAX_DELTA
     ) {
-        voltageState = BATTERY_NOT_PRESENT;
+        /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig()->batterynotpresentlevel */
+
+        consumptionState = voltageState = BATTERY_NOT_PRESENT;
+
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
@@ -224,9 +227,7 @@ void batteryUpdateStates(void)
     batteryUpdateVoltageState();
     batteryUpdateConsumptionState();
 
-    if (batteryCellCount > 0) {
-        batteryState = MAX(voltageState, consumptionState);
-    }
+    batteryState = MAX(voltageState, consumptionState);
 }
 
 batteryState_e getBatteryState(void)
