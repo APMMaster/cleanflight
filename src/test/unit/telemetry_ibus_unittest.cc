@@ -55,7 +55,7 @@ typedef struct serialPortStub_s {
 
 
 static uint16_t vbat = 100;
-uint16_t getVbat(void)
+uint16_t getBatteryVoltage(void)
 {
     return vbat;
 }

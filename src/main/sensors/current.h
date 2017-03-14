@@ -50,10 +50,10 @@ typedef struct currentMeterADCOrVirtualConfig_s {
 
 PG_DECLARE_ARRAY(currentMeterADCOrVirtualConfig_t, MAX_ADC_OR_VIRTUAL_CURRENT_METERS, currentMeterADCOrVirtualConfig);
 
-void currentMeterInit(void);
+void currentMeterADCInit(void);
+
 void currentUpdateADCMeter(currentMeter_t *state, int32_t lastUpdateAt);
 void currentUpdateESCMeter(currentMeter_t *state, int32_t lastUpdateAt);
 void currentUpdateVirtualMeter(currentMeter_t *state, int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset);
 
 void resetCurrentMeterState(currentMeter_t *state);
-void currentMeterInit(void);

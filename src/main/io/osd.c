@@ -192,7 +192,7 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_MAIN_BATT_VOLTAGE:
         {
             buff[0] = SYM_BATT_5;
-            sprintf(buff + 1, "%d.%1dV", getVbat() / 10, getVbat() % 10);
+            sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
             break;
         }
 
@@ -402,7 +402,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_POWER:
         {
-            sprintf(buff, "%dW", getAmperage() * getVbat() / 1000);
+            sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
             break;
         }
 
@@ -416,10 +416,18 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_MAIN_BATT_WARNING:
         {
-            if (getVbat() > (batteryWarningVoltage - 1))
-              return;
+            switch(getBatteryState()) {
+                case BATTERY_WARNING:
+                    sprintf(buff, "LOW BATTERY");
+                    break;
 
-            sprintf(buff, "LOW VOLTAGE");
+                case BATTERY_CRITICAL:
+                    sprintf(buff, " LAND NOW");
+                    break;
+
+                default:
+                    break;
+            }
             break;
         }
 
@@ -573,7 +581,7 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_RSSI_VALUE);
 
-    if (getVbat() <= (batteryWarningVoltage - 1)) {
+    if (getBatteryState() != BATTERY_OK) {
         SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
         SET_BLINK(OSD_MAIN_BATT_WARNING);
     } else {
@@ -632,8 +640,8 @@ static void osdUpdateStats(void)
     if (stats.max_speed < value)
         stats.max_speed = value;
 
-    if (stats.min_voltage > getVbat())
-        stats.min_voltage = getVbat();
+    if (stats.min_voltage > getBatteryVoltage())
+        stats.min_voltage = getBatteryVoltage();
 
     value = getAmperage() / 100;
     if (stats.max_current < value)

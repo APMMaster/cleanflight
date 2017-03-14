@@ -262,7 +262,7 @@ batteryState_e getBatteryState(void)
 	return BATTERY_OK;
 }
 
-uint16_t getVbat(void)
+uint16_t getBatteryVoltage(void)
 {
     return vbat;
 }

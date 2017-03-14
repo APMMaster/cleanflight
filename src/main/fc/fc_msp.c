@@ -728,7 +728,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ANALOG: {
-        sbufWriteU8(dst, (uint8_t)constrain(getVbat(), 0, 255));
+        sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
 
@@ -915,8 +915,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_VOLTAGE_METER_CONFIG:
         BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0);
-        sbufWriteU8(dst, MAX_VOLTAGE_METER_ADC); // voltage meters in payload
-        for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_METER_ADC; i++) {
+        sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
+        for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
             // note, by indicating a sensor type and a sub-frame length it's possible to configure any type of voltage meter, i.e. all sensors not built directly into the FC such as ESC/RX/SPort/SBus
             sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
             sbufWriteU8(dst, 3); // ADC sensor sub-frame length
@@ -1787,7 +1787,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
 
         int index = sbufReadU8(src);
-        if (index >= MAX_VOLTAGE_METER_ADC) {
+        if (index >= MAX_VOLTAGE_SENSOR_ADC) {
             return -1;
         }
 

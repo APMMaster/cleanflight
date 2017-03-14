@@ -35,23 +35,28 @@
 #include "config/config_reset.h"
 
 #include "sensors/voltage.h"
+#include "sensors/esc_sensor.h"
 
 #ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
 #endif
 
-voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_METER_ADC];
+#ifdef USE_ESC_SENSOR
+static biquadFilter_t escvBatFilter;
+#endif
+
+voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
 
 voltageMeterADCState_t *getVoltageMeterADC(uint8_t index)
 {
     return &voltageMeterADCStates[index];
 }
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(voltageSensorADCConfig_t, MAX_VOLTAGE_METER_ADC, voltageSensorADCConfig, PG_VOLTAGE_SENSOR_ADC_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(voltageSensorADCConfig_t, MAX_VOLTAGE_SENSOR_ADC, voltageSensorADCConfig, PG_VOLTAGE_SENSOR_ADC_CONFIG, 0);
 
 void pgResetFn_voltageSensorADCConfig(voltageSensorADCConfig_t *instance)
 {
-    for (int i = 0; i < MAX_VOLTAGE_METER_ADC; i++) {
+    for (int i = 0; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
         RESET_CONFIG(voltageSensorADCConfig_t, &instance[i],
             .vbatscale = VBAT_SCALE_DEFAULT,
             .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
@@ -61,7 +66,6 @@ void pgResetFn_voltageSensorADCConfig(voltageSensorADCConfig_t *instance)
 }
 
 
-#ifdef USE_ADC
 static const uint8_t voltageMeterAdcChannelMap[] = {
     ADC_BATTERY,
 #ifdef ADC_POWER_12V
@@ -79,74 +83,38 @@ STATIC_UNIT_TESTED uint16_t voltageAdcToVoltage(const uint16_t src, const voltag
     return ((((uint32_t)src * config->vbatscale * 33 + (0xFFF * 5)) / (0xFFF * config->vbatresdivval)) / config->vbatresdivmultiplier);
 }
 
-const voltageSensorADCConfig_t *getVoltageMeterConfig(const uint8_t channel)
+void voltageMeterADCRefresh(void)
 {
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METER_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
-        if (voltageMeterAdcChannelMap[i] == channel) {
-            return voltageSensorADCConfig(i);
-        }
-    }
 
-    failureMode(FAILURE_DEVELOPER);
 
-    return NULL;
-}
-
-// filtered - uses pre-calculated value
-uint16_t getVoltageForADCChannel(uint8_t channel)
-{
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METER_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
-        if (voltageMeterAdcChannelMap[i] == channel) {
-            voltageMeterADCState_t *state = &voltageMeterADCStates[i];
-            return state->vbat;
-        }
-    }
-
-    failureMode(FAILURE_DEVELOPER);
-
-    return 0;
-}
-
-// unfiltered - always recalcualates voltage based on last adc sensor reading
-uint16_t getLatestVoltageForADCChannel(uint8_t channel)
-{
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METER_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
-        if (voltageMeterAdcChannelMap[i] == channel) {
-            voltageMeterADCState_t *state = &voltageMeterADCStates[i];
-            const voltageSensorADCConfig_t *config = voltageSensorADCConfig(i);
-
-            return voltageAdcToVoltage(state->vbatLatestADC, config);
-        }
-    }
-
-    failureMode(FAILURE_DEVELOPER);
-
-    return 0;
-}
-
-void voltageMeterADCUpdate(void)
-{
-    uint16_t vbatSample;
-
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METER_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_SENSOR_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         // store the battery voltage with some other recent battery voltage readings
 
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         const voltageSensorADCConfig_t *config = voltageSensorADCConfig(i);
 
         uint8_t channel = voltageMeterAdcChannelMap[i];
-        vbatSample = state->vbatLatestADC = adcGetChannel(channel);
+        uint16_t rawSample = adcGetChannel(channel);
 
-        vbatSample = biquadFilterApply(&state->vbatFilterState, vbatSample);
+        uint16_t filteredSample = biquadFilterApply(&state->vbatFilterState, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
-        state->vbat = voltageAdcToVoltage(vbatSample, config);
+        state->voltageFiltered = voltageAdcToVoltage(filteredSample, config);
+        state->voltageUnfiltered = voltageAdcToVoltage(rawSample, config);
     }
+}
+
+void voltageMeterADCUpdate(voltageMeter_t *voltageMeter, voltageSensorADC_e adcChannel)
+{
+    voltageMeterADCState_t *state = &voltageMeterADCStates[adcChannel];
+
+    voltageMeter->filtered = state->voltageFiltered;
+    voltageMeter->unfiltered = state->voltageUnfiltered;
 }
 
 void voltageMeterADCInit(void)
 {
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METER_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_SENSOR_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         // store the battery voltage with some other recent battery voltage readings
 
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
@@ -155,11 +123,27 @@ void voltageMeterADCInit(void)
         biquadFilterInitLPF(&state->vbatFilterState, VBATT_LPF_FREQ, 50000);
     }
 }
-#else
-void voltageMeterInit(void)
+
+void voltageMeterReset(voltageMeter_t *meter)
 {
+    meter->filtered = 0;
+    meter->unfiltered = 0;
 }
-void voltageMeterUpdate(void)
+
+void voltageMeterESCInit(void)
 {
-}
+#ifdef USE_ESC_SENSOR
+    biquadFilterInitLPF(&escvBatFilter, VBAT_LPF_FREQ, 50000); //50HZ Update
 #endif
+}
+void voltageMeterESCUpdate(voltageMeter_t *voltageMeter)
+{
+#ifndef USE_ESC_SENSOR
+    UNUSED(voltageMeter);
+#else
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
+    voltageMeter->filtered = biquadFilterApply(&escvBatFilter, voltageMeter->unfiltered);
+#endif
+}
+

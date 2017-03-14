@@ -245,10 +245,10 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    hottEAMMessage->main_voltage_L = getVbat() & 0xFF;
-    hottEAMMessage->main_voltage_H = getVbat() >> 8;
-    hottEAMMessage->batt1_voltage_L = getVbat() & 0xFF;
-    hottEAMMessage->batt1_voltage_H = getVbat() >> 8;
+    hottEAMMessage->main_voltage_L = getBatteryVoltage() & 0xFF;
+    hottEAMMessage->main_voltage_H = getBatteryVoltage() >> 8;
+    hottEAMMessage->batt1_voltage_L = getBatteryVoltage() & 0xFF;
+    hottEAMMessage->batt1_voltage_H = getBatteryVoltage() >> 8;
 
     updateAlarmBatteryStatus(hottEAMMessage);
 }

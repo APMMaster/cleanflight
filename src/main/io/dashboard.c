@@ -452,8 +452,8 @@ void showBatteryPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    if (feature(FEATURE_VBAT)) {
-        tfp_sprintf(lineBuffer, "Volts: %d.%1d Cells: %d", getVbat() / 10, getVbat() % 10, batteryCellCount);
+    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
+        tfp_sprintf(lineBuffer, "Volts: %d.%1d Cells: %d", getBatteryVoltage() / 10, getBatteryVoltage() % 10, getBatteryCellCount());
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);

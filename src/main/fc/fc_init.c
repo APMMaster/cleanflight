@@ -558,15 +558,6 @@ void init(void)
 
     batteryInit(); // always needs doing, regardless of features.
 
-    if (feature(FEATURE_VBAT)) {
-        // Now that everything has powered up the voltage and cell count be determined.
-        voltageMeterADCInit();
-    }
-
-    if (feature(FEATURE_CURRENT_METER)) {
-        currentMeterInit();
-    }
-
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY

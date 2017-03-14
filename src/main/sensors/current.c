@@ -93,8 +93,8 @@ void currentUpdateVirtualMeter(currentMeter_t *state, int32_t lastUpdateAt, bool
             throttleOffset = 0;
         }
 
-        int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-        state->amperageLatest = state->amperage += throttleFactor * (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->scale  / 1000;
+        int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50); // FIXME magic number 50,  50hz?
+        state->amperageLatest = state->amperage += throttleFactor * (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->scale / 1000;
     }
     updateCurrentDrawn(state, lastUpdateAt);
 }
@@ -123,7 +123,7 @@ void resetCurrentMeterState(currentMeter_t *state)
     state->amperageLatest = 0;
 }
 
-void currentMeterInit(void)
+void currentMeterADCInit(void)
 {
     biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, 50000); //50HZ Update
 }

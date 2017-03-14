@@ -677,7 +677,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #endif
             break;
         case BST_ANALOG:
-            bstWrite8((uint8_t)constrain(getVbat(), 0, 255));
+            bstWrite8((uint8_t)constrain(getBatteryVoltage(), 0, 255));
             bstWrite16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
             // FIXME - what does the TBS OSD actually need? the 'multiwiiCurrentMeterOutput' setting pre-dates the TBS i2c_bst code so likely we can just output exactly what we need.
@@ -862,7 +862,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_VOLTAGE_METER_CONFIG:
             BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0);
-            for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_METER_ADC; i++) {
+            for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
                 // note, by indicating a sensor type and a sub-frame length it's possible to configure any type of voltage meter, i.e. all sensors not built directly into the FC such as ESC/RX/SPort/SBus
                 bstWrite8(VOLTAGE_METER_ADC); // indicate the type of sensor that the next part of the payload is for
                 bstWrite8(3); // ADC sensor sub-frame length
@@ -1299,7 +1299,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             }
 
             int index = bstRead8();
-            if (index >= MAX_VOLTAGE_METER_ADC) {
+            if (index >= MAX_VOLTAGE_SENSOR_ADC) {
                 return -1;
             }
 

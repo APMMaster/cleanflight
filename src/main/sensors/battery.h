@@ -52,17 +52,6 @@ typedef struct batteryConfig_s {
 
 } batteryConfig_t;
 
-/* CF1.x
-typedef struct batteryConfig_s {
-    uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
-    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
-    uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
-    uint16_t batteryCapacity;               // mAh
-    uint8_t amperageMeterSource;             // see amperageMeter_e - used for telemetry, led strip, legacy MSP.
-    uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
-} batteryConfig_t;
-*/
-
 PG_DECLARE(batteryConfig_t, batteryConfig);
 
 typedef enum {
@@ -72,28 +61,26 @@ typedef enum {
     BATTERY_NOT_PRESENT
 } batteryState_e;
 
-//extern uint16_t vbatRaw;
-//extern uint16_t vbatLatest;
-extern uint8_t batteryCellCount;
-extern uint16_t batteryWarningVoltage;
-//extern int32_t amperageLatest;
-//extern int32_t amperage;
-//extern int32_t mAhDrawn;
+void batteryInit(void);
+void batteryUpdateVoltage(void);
+void batteryUpdatePresence(void);
 
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
-void batteryUpdate(void);
-void batteryInit(void);
+
+void batteryUpdateStates(void);
+void batteryUpdateAlarms(void);
 
 struct rxConfig_s;
 
 float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
-uint16_t getVbat(void);
-uint16_t getVbatLatest(void);
+uint16_t getBatteryVoltage(void);
+uint16_t getBatteryVoltageLatest(void);
+uint8_t getBatteryCellCount(void);
 
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
 
-void batteryUpdateCurrentMeter(int32_t lastUpdateAt);
+void batteryUpdateCurrentMeter(int32_t lastUpdateAt, bool armed);

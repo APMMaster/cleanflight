@@ -425,10 +425,10 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #endif
 
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
-            return feature(FEATURE_VBAT);
+            return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
 
         case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
+            return batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
@@ -841,7 +841,7 @@ void startBlackbox(void)
     blackboxHistory[1] = &blackboxHistoryRing[1];
     blackboxHistory[2] = &blackboxHistoryRing[2];
 
-    vbatReference = getVbatLatest();
+    vbatReference = getBatteryVoltageLatest();
 
     //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -1037,7 +1037,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->motor[i] = motor[i];
     }
 
-    blackboxCurrent->vbatLatest = getVbatLatest();
+    blackboxCurrent->vbatLatest = getBatteryVoltageLatest();
     blackboxCurrent->amperageLatest = getAmperageLatest();
 
 #ifdef MAG
@@ -1226,10 +1226,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("vbatref:%u",                          vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
-            if (feature(FEATURE_CURRENT_METER)) {
-                for (int i = 0; i < MAX_ADC_OR_VIRTUAL_CURRENT_METERS; i++) {
-                    blackboxPrintfHeaderLine("currentSensor_%d:%d,%d", i, currentMeterADCOrVirtualConfig(i)->offset, currentMeterADCOrVirtualConfig(i)->scale);
-                }
+            if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
+                blackboxPrintfHeaderLine("currentSensor:%d,%d",currentMeterADCOrVirtualConfig(CURRENT_SENSOR_ADC)->offset, currentMeterADCOrVirtualConfig(CURRENT_SENSOR_ADC)->scale);
             }
             );
 

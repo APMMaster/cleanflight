@@ -313,6 +313,6 @@ uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}
 uint8_t calculateBatteryPercentage(void) {return 67;}
 batteryState_e getBatteryState(void) {return BATTERY_OK;}
 bool isAirmodeActive(void) {return airMode;}
-uint16_t getVbat(void) { return vbat; }
+uint16_t getBatteryVoltage(void) { return vbat; }
 }
 

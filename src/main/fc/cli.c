@@ -4079,7 +4079,7 @@ static void cliStatus(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintf("System Uptime: %d seconds\r\n", millis() / 1000);
-    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", getVbat(), batteryCellCount, getBatteryStateString());
+    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
