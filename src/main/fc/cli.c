@@ -4140,7 +4140,7 @@ static void cliTasks(char *cmdline)
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
-        cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+        cliPrintf("Task list             rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
     } else {
         cliPrintf("Task list\r\n");
     }
@@ -4155,14 +4155,14 @@ static void cliTasks(char *cmdline)
                 subTaskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
                 if (pidConfig()->pid_process_denom > 1) {
-                    cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
+                    cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
-                    cliPrintf("%02d - (%9s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                    cliPrintf("%02d - (%11s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
                 taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
-                cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
+                cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             }
             const int maxLoad = taskInfo.maxExecutionTime == 0 ? 0 :(taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
             const int averageLoad = taskInfo.averageExecutionTime == 0 ? 0 : (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
@@ -4178,7 +4178,7 @@ static void cliTasks(char *cmdline)
                 cliPrintf("%6d\r\n", taskFrequency);
             }
             if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
-                cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
+                cliPrintf("   - (%15s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
