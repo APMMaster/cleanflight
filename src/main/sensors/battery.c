@@ -152,11 +152,15 @@ void batteryUpdatePresence(void)
 {
     static uint16_t previousVoltage = 0;
 
+    bool isVoltageStable = (
+        previousVoltage > 0
+        && ABS(voltageMeter.filtered - previousVoltage) <= VBAT_STABLE_MAX_DELTA
+    );
+
     if (
         voltageState == BATTERY_NOT_PRESENT
         && voltageMeter.filtered > batteryConfig()->batteryNotPresentLevel
-        && previousVoltage > 0 &&
-        ABS(voltageMeter.filtered - previousVoltage) <= VBAT_STABLE_MAX_DELTA
+        && isVoltageStable
     ) {
         /* battery has just been connected - calculate cells, warning voltages and reset state */
 
@@ -174,7 +178,7 @@ void batteryUpdatePresence(void)
     } else if (
         voltageState != BATTERY_NOT_PRESENT
         && voltageMeter.filtered <= batteryConfig()->batteryNotPresentLevel
-        && ABS(voltageMeter.filtered - previousVoltage) <= VBAT_STABLE_MAX_DELTA
+        && isVoltageStable
     ) {
         /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig()->batterynotpresentlevel */
 
@@ -294,9 +298,11 @@ void batteryInit(void)
 static void batteryUpdateConsumptionState(void)
 {
     if (batteryConfig()->useConsumptionAlerts && batteryConfig()->batteryCapacity > 0 && batteryCellCount > 0) {
-        if (calculateBatteryPercentage() == 0) {
+        uint8_t batteryPercentageRemaining = calculateBatteryPercentageRemaining();
+
+        if (batteryPercentageRemaining == 0) {
             consumptionState = BATTERY_CRITICAL;
-        } else if (calculateBatteryPercentage() <= batteryConfig()->consumptionWarningPercentage) {
+        } else if (batteryPercentageRemaining <= batteryConfig()->consumptionWarningPercentage) {
             consumptionState = BATTERY_WARNING;
         } else {
             consumptionState = BATTERY_OK;
@@ -349,13 +355,14 @@ float calculateVbatPidCompensation(void) {
     return batteryScaler;
 }
 
-uint8_t calculateBatteryPercentage(void)
+uint8_t calculateBatteryPercentageRemaining(void)
 {
     uint8_t batteryPercentage = 0;
     if (batteryCellCount > 0) {
         uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
+
         if (batteryCapacity > 0) {
-            batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn)  * 100 / batteryCapacity, 0, 100);
+            batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn) * 100 / batteryCapacity, 0, 100);
         } else {
             batteryPercentage = constrain((((uint32_t)voltageMeter.filtered - (batteryConfig()->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig()->vbatmaxcellvoltage - batteryConfig()->vbatmincellvoltage) * batteryCellCount), 0, 100);
         }
